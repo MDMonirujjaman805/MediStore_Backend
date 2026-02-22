@@ -26,20 +26,4 @@ enum UserStatus {
   BANNED
 }
 
-model User {
-  id        String     @id @default(uuid())
-  name      String
-  email     String     @unique
-  password  String
-  phone     String?
-  role      Role
-  status    UserStatus @default(ACTIVE)
-  createdAt DateTime   @default(now())
-  updatedAt DateTime   @updatedAt
 
-  @@index([email, id])
-  // medicines   Medicine[]  @relation("SellerMedicines")
-  // orders      Order[]
-  // reviews     Review[]
-  @@map("user")
-}
