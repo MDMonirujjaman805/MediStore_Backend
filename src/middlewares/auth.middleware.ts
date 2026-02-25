@@ -1,60 +1,91 @@
+// import jwt from "jsonwebtoken";
+// import httpStatus from "http-status";
+// import AppError from "../types/common";
+// import { Request, Response, NextFunction } from "express";
+
+// export interface TJwtPayload {
+//   id: string;
+//   email: string;
+//   role: string;
+// }
+
+// interface AuthRequest extends Request {
+//   user?: TJwtPayload;
+// }
+
+// const auth = () => {
+//   return async (req: AuthRequest, res: Response, next: NextFunction) => {
+//     try {
+//       const token = req.headers.authorization;
+
+//       if (!token) {
+//         throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
+//       }
+
+//       const verifiedUser = jwt.verify(
+//         token,
+//         process.env.JWT_SECRET as string,
+//       ) as TJwtPayload;
+
+//       req.user = verifiedUser;
+
+//       next();
+//     } catch (error) {
+//       next(new AppError(httpStatus.UNAUTHORIZED, "Invalid or expired token........"));
+//     }
+//   };
+// };
+
+// export default auth;
+
 import { Request, Response, NextFunction } from "express";
-import { TJwtPayload } from "../types/jwtPayload";
-import { prisma } from "../lib/prisma";
+import AppError from "../types/common";
+import httpStatus from "http-status";
 import jwt from "jsonwebtoken";
 
-export const authMiddleware = async (
-  req: Request,
-  res: Response,
-  next: NextFunction,
-) => {
-  try {
-    // 1️⃣ Token check
-    const authHeader = req.headers.authorization;
+export interface TJwtPayload {
+  id: string;
+  email: string;
+  role: string;
+}
 
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      return res.status(401).json({
-        success: false,
-        message: "Unauthorized access. No token provided.",
-      });
+interface AuthRequest extends Request {
+  user?: TJwtPayload;
+}
+
+const auth = () => {
+  return async (req: AuthRequest, res: Response, next: NextFunction) => {
+    try {
+      const authHeader = req.headers.authorization;
+
+      if (!authHeader || !authHeader.startsWith("Bearer ")) {
+        throw new AppError(httpStatus.UNAUTHORIZED, "You are not authorized");
+      }
+
+      const token = authHeader.split(" ")[1];
+
+      if (!process.env.JWT_SECRET) {
+        throw new Error("JWT_SECRET is not defined in env");
+      }
+
+      const verifiedUser = jwt.verify(
+        token,
+        process.env.JWT_SECRET,
+      ) as TJwtPayload;
+
+      req.user = verifiedUser;
+
+      next();
+    } catch (err: any) {
+      if (err.name === "TokenExpiredError") {
+        return next(new AppError(httpStatus.UNAUTHORIZED, "Token expired"));
+      }
+      if (err.name === "JsonWebTokenError") {
+        return next(new AppError(httpStatus.UNAUTHORIZED, "Invalid token"));
+      }
+      next(err);
     }
-
-    const token = authHeader.split(" ")[1];
-
-    // 2️⃣ Verify token
-    const decoded = jwt.verify(
-      token,
-      process.env.JWT_SECRET as string,
-    ) as TJwtPayload;
-
-    // 3️⃣ Find user in DB
-    const user = await prisma.user.findUnique({
-      where: { id: decoded.userId },
-    });
-
-    if (!user) {
-      return res.status(404).json({
-        success: false,
-        message: "User not found.",
-      });
-    }
-
-    // 4️⃣ Check user status
-    if (user.status !== "ACTIVE") {
-      return res.status(403).json({
-        success: false,
-        message: "User is banned or inactive.",
-      });
-    }
-
-    // 5️⃣ Attach user to request
-    req.user = user;
-
-    next();
-  } catch (error) {
-    return res.status(401).json({
-      success: false,
-      message: "Invalid or expired token.",
-    });
-  }
+  };
 };
+
+export default auth;

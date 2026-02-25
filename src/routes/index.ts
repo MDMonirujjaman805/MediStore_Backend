@@ -4,6 +4,9 @@ import { MedicineRoutes } from "../modules/medicine/medicine.route";
 
 const router = Router();
 
+// router.use("/auth", AuthRoutes);
+// router.use("/medicine", MedicineRoutes);
+
 const routerManger = [
   {
     path: "/auth",
@@ -12,23 +15,10 @@ const routerManger = [
   {
     path: "/medicine",
     route: MedicineRoutes,
-  },
-  //   {
-  //     path: "/sitter",
-  //     route: SitterRoutes,
-  //   },
-  //   {
-  //     path: "/service",
-  //     route: ServiceRoutes,
-  //   },
-  //   {
-  //     path: "/booking",
-  //     route: BookingRoutes,
-  //   },
+  }
 ];
 
 routerManger.forEach((r) => router.use(r.path, r.route));
 
-// console.log(MedicineRoutes);
-
+console.log("MedicineRoutes:", MedicineRoutes);
 export default router;

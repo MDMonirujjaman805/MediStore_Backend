@@ -1,5 +1,5 @@
-import express, { Application, Request, Response } from "express";
 import globalErrorHandler from "./errors/globalErrorHandler";
+import express, { Application } from "express";
 import router from "./routes";
 import dotenv from "dotenv";
 import cors from "cors";
@@ -12,10 +12,6 @@ app.use(express.json());
 app.use(cors());
 
 app.use("/api/v1", router);
-
-app.get("/", (req: Request, res: Response) => {
-  res.send("Hello from Apollo Gears World!");
-});
 
 // Global error middleware
 app.use(globalErrorHandler);
